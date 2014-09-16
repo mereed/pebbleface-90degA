@@ -313,46 +313,6 @@
                 "file": "images/90-1-180.png",
                 "name": "IMAGE_NUM2_1",
                 "type": "png"
-            },
-            {
-                "file": "images/90-2-180.png",
-                "name": "IMAGE_NUM2_2",
-                "type": "png"
-            },
-            {
-                "file": "images/90-3-180.png",
-                "name": "IMAGE_NUM2_3",
-                "type": "png"
-            },
-            {
-                "file": "images/90-4-180.png",
-                "name": "IMAGE_NUM2_4",
-                "type": "png"
-            },
-            {
-                "file": "images/90-5-180.png",
-                "name": "IMAGE_NUM2_5",
-                "type": "png"
-            },
-            {
-                "file": "images/90-6-180.png",
-                "name": "IMAGE_NUM2_6",
-                "type": "png"
-            },
-            {
-                "file": "images/90-7-180.png",
-                "name": "IMAGE_NUM2_7",
-                "type": "png"
-            },
-            {
-                "file": "images/90-8-180.png",
-                "name": "IMAGE_NUM2_8",
-                "type": "png"
-            },
-            {
-                "file": "images/90-9-180.png",
-                "name": "IMAGE_NUM2_9",
-                "type": "png"
             }
         ]
     },
