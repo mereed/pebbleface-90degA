@@ -36,6 +36,7 @@ static int bluetoothvibe;
 static int hourlyvibe;
 static int hidesec;
 static int hide_batt;
+static int hide_bt;
 static int hide_date;
 static int hide_weather;
 static int md;
@@ -57,7 +58,8 @@ enum WeatherKey {
   MONTH_DAY_KEY = 0x8,
   HIDE_ZERO_KEY = 0x9,
   BLINK_KEY = 0xA,
-  MONTH_KEY = 0xB
+  MONTH_KEY = 0xB,
+  HIDE_BT_KEY = 0xC
 //  WEATHER_TEMPERATURE_KEY = 0x4
 };
 
@@ -217,28 +219,19 @@ void hide_batt_now(bool hide_batt) {
 	
 	if (hide_batt) {
 		layer_set_hidden(bitmap_layer_get_layer(layer_batt_img), true);
-		layer_set_hidden(bitmap_layer_get_layer(layer_conn_img), true);
 		
 	} else {
 		layer_set_hidden(bitmap_layer_get_layer(layer_batt_img), false);
-		layer_set_hidden(bitmap_layer_get_layer(layer_conn_img), false);
 	}
 }
 
-void hide_date_now(bool hide_date) {
+void hide_bt_now(bool hide_bt) {
 	
-	if (hide_date) {
-		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
+	if (hide_bt) {
+		layer_set_hidden(bitmap_layer_get_layer(layer_conn_img), true);
 		
-		for (int i = 0; i < TOTAL_DATE_DIGITS; ++i) {
-        layer_set_hidden( bitmap_layer_get_layer(date_digits_layers[i]), true);
-			}
 	} else {
-		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
-		
-		for (int i = 0; i < TOTAL_DATE_DIGITS; ++i) {
-        layer_set_hidden( bitmap_layer_get_layer(date_digits_layers[i]), false);
-			}
+		layer_set_hidden(bitmap_layer_get_layer(layer_conn_img), false);
 	}
 }
 
@@ -258,17 +251,13 @@ void hide_seconds_now(bool hidesec) {
 	for (int i = 0; i < TOTAL_SECONDS_DIGITS; ++i) {
         layer_set_hidden(bitmap_layer_get_layer(seconds_digits_layers[i]), true);
 			}
-       // tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
       }
       else {
 	for (int i = 0; i < TOTAL_SECONDS_DIGITS; ++i) {
         layer_set_hidden(bitmap_layer_get_layer(seconds_digits_layers[i]), false);
 			}
-      //  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
       }   
 }
-
-
 
 static void sync_tuple_changed_callback(const uint32_t key,
                                         const Tuple* new_tuple,
@@ -318,22 +307,21 @@ static void sync_tuple_changed_callback(const uint32_t key,
 	  hide_batt_now(hide_batt);
 	  break;
 	  
-	case HIDE_DATE_KEY:
-      hide_date = new_tuple->value->uint8 != 0;
-	  persist_write_bool(HIDE_DATE_KEY, hide_date);	  
-	  hide_date_now(hide_date);
+	case HIDE_BT_KEY:
+	  hide_bt = new_tuple->value->uint8 != 0;
+	  persist_write_bool(HIDE_BT_KEY, hide_bt);
+	  hide_bt_now(hide_bt);
 	  break;
+	  
 	 
 	case MONTH_DAY_KEY:
 	  md = new_tuple->value->uint8 !=0;
 	  persist_write_bool(MONTH_DAY_KEY, md);	
 	  if (md) {
-				//layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
 		   		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), false);
 
 	  } else{
 		 		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), true);
-		 		//layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
 	  }
 	  break;
 	  
@@ -353,18 +341,36 @@ static void sync_tuple_changed_callback(const uint32_t key,
 	  persist_write_bool(MONTH_KEY, month);	  
 		if (month) {
 		layer_set_hidden(bitmap_layer_get_layer(monthletters_layer), false);
-		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
-		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), true);	
+	
     	} else {
 		layer_set_hidden(bitmap_layer_get_layer(monthletters_layer), true);
-		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
-	//	layer_set_hidden(bitmap_layer_get_layer(monthday_layer), false);
+
 			}
 	  break;
 	  
 	case BLINK_KEY:
       blink = new_tuple->value->uint8 !=0;
 	  persist_write_bool(BLINK_KEY, blink);
+	  break;
+	
+	case HIDE_DATE_KEY:
+      hide_date = new_tuple->value->uint8 != 0;
+	  persist_write_bool(HIDE_DATE_KEY, hide_date);	  
+	
+	if (hide_date) {
+		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
+		
+		for (int i = 0; i < TOTAL_DATE_DIGITS; ++i) {
+        layer_set_hidden( bitmap_layer_get_layer(date_digits_layers[i]), true);
+			}
+	} else {
+		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
+		
+		for (int i = 0; i < TOTAL_DATE_DIGITS; ++i) {
+        layer_set_hidden( bitmap_layer_get_layer(date_digits_layers[i]), false);
+			}
+	}
+	  break;
   }
 }
 
@@ -565,9 +571,9 @@ static void init(void) {
     img_battery_charge = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BATT_CHARGING);
 
     // layers
-	layer_conn_img  = bitmap_layer_create(GRect(106, 4, 25, 25));
+	layer_conn_img  = bitmap_layer_create(GRect(4, 4, 25, 25));
 
-    layer_batt_img  = bitmap_layer_create(GRect(0, 2, 35, 35));
+    layer_batt_img  = bitmap_layer_create(GRect(0, 67, 35, 35));
     bitmap_layer_set_bitmap(layer_batt_img, img_battery_100);
     bitmap_layer_set_bitmap(layer_conn_img, img_bt_connect);
 
@@ -587,7 +593,7 @@ static void init(void) {
  Layer *weather_holder = layer_create(GRect(0, 0, 144, 168 ));
   layer_add_child(window_layer, weather_holder);
 
-  icon_layer = bitmap_layer_create(GRect(8, 45, 20, 20));
+  icon_layer = bitmap_layer_create(GRect(7, 37, 20, 20));
   layer_add_child(weather_holder, bitmap_layer_get_layer(icon_layer));
 /*
   temp_layer = text_layer_create(GRect(10, 70, 40, 40));
@@ -600,12 +606,13 @@ static void init(void) {
 	
   // Create time and date layers
   GRect dummy_frame = { {0, 0}, {0, 0} };
-   monthletters_layer = bitmap_layer_create(dummy_frame);
-   layer_add_child(window_layer, bitmap_layer_get_layer(monthletters_layer));		 	
-  
+   
 	day_name_layer = bitmap_layer_create(dummy_frame);
    layer_add_child(window_layer, bitmap_layer_get_layer(day_name_layer));
-
+	
+	monthletters_layer = bitmap_layer_create(dummy_frame);
+   layer_add_child(window_layer, bitmap_layer_get_layer(monthletters_layer));		 	
+  
 	monthday_layer = bitmap_layer_create(dummy_frame);
    layer_add_child(window_layer, bitmap_layer_get_layer(monthday_layer));		
 	
@@ -638,6 +645,7 @@ Tuplet initial_values[] = {
 	TupletInteger(HIDE_ZERO_KEY, persist_read_bool(HIDE_ZERO_KEY)),
 	TupletInteger(BLINK_KEY, persist_read_bool(BLINK_KEY)),
 	TupletInteger(MONTH_KEY, persist_read_bool(MONTH_KEY)),
+	TupletInteger(HIDE_BT_KEY, persist_read_bool(HIDE_BT_KEY)),
   };
 
   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values,

@@ -81,7 +81,8 @@ if (options === null) options = { "use_gps" : "true",
                                   "md" : "false",
 							      "hidezero" : "false",
 							      "blink" : "false",
-							      "month" : "false"};
+							      "month" : "false",
+							      "hidebt" : "false"};
 
 function getWeatherFromLatLong(latitude, longitude) {
   var response;
@@ -165,6 +166,7 @@ function getWeatherFromWoeid(woeid) {
 			"hidezero" : (options["hidezero"] == "true" ? 1 : 0),
 			"blink" : (options["blink"] == "true" ? 1 : 0),
 			"month" : (options["month"] == "true" ? 1 : 0),
+			"hidebt" : (options["hidebt"] == "true" ? 1 : 0),
           });
         }
       } else {
@@ -215,7 +217,8 @@ Pebble.addEventListener('showConfiguration', function(e) {
     '&md=' + encodeURIComponent(options['md']) +
     '&hidezero=' + encodeURIComponent(options['hidezero']) +
     '&blink=' + encodeURIComponent(options['blink']) +
-    '&month=' + encodeURIComponent(options['month']);
+    '&month=' + encodeURIComponent(options['month']) +
+    '&hidebt=' + encodeURIComponent(options['hidebt']);
   //console.log('showing configuration at uri: ' + uri);
 
   Pebble.openURL(uri);

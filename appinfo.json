@@ -3,6 +3,7 @@
         "blink": 10,
         "bluetoothvibe": 2,
         "hidebatt": 5,
+        "hidebt": 12,
         "hidedate": 6,
         "hidesec": 4,
         "hideweather": 7,
@@ -432,7 +433,7 @@
     "shortName": "ninetydegA",
     "uuid": "2867f492-b1b8-4b60-a446-a21f0e37f188",
     "versionCode": 1,
-    "versionLabel": "1.4",
+    "versionLabel": "1.5",
     "watchapp": {
         "watchface": true
     }
