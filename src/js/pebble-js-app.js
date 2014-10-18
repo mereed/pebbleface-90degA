@@ -73,11 +73,15 @@ if (options === null) options = { "use_gps" : "true",
                                   "units" : "fahrenheit",
                                   "invert_color" : "false",
                                   "bluetoothvibe" : "false",
+								  "hourlyvibe" : "false",
                                   "hidesec" : "false",
 					 			  "hidebatt" : "false",
                                   "hidedate" : "false",
                                   "hideweather" : "false",
-                                  "hourlyvibe" : "false"};
+                                  "md" : "false",
+							      "hidezero" : "false",
+							      "blink" : "false",
+							      "month" : "false"};
 
 function getWeatherFromLatLong(latitude, longitude) {
   var response;
@@ -157,6 +161,10 @@ function getWeatherFromWoeid(woeid) {
 			"hidebatt" : (options["hidebatt"] == "true" ? 1 : 0),
 			"hidedate" : (options["hidedate"] == "true" ? 1 : 0),
 			"hideweather" : (options["hideweather"] == "true" ? 1 : 0),
+			"md" : (options["md"] == "true" ? 1 : 0),
+			"hidezero" : (options["hidezero"] == "true" ? 1 : 0),
+			"blink" : (options["blink"] == "true" ? 1 : 0),
+			"month" : (options["month"] == "true" ? 1 : 0),
           });
         }
       } else {
@@ -193,17 +201,21 @@ function locationError(err) {
 }
 
 Pebble.addEventListener('showConfiguration', function(e) {
-  var uri = 'http://www.themapman.com/pebblewatch/90degA-13.html?' +
+  var uri = 'http://www.themapman.com/pebblewatch/90degA-14c.html?' +
     'use_gps=' + encodeURIComponent(options['use_gps']) +
     '&location=' + encodeURIComponent(options['location']) +
     '&units=' + encodeURIComponent(options['units']) +
     '&invert_color=' + encodeURIComponent(options['invert_color']) +
     '&bluetoothvibe=' + encodeURIComponent(options['bluetoothvibe']) +
+	'&hourlyvibe=' + encodeURIComponent(options['hourlyvibe']) +
     '&hidesec=' + encodeURIComponent(options['hidesec']) +
 	'&hidebatt=' + encodeURIComponent(options['hidebatt']) +
 	'&hidedate=' + encodeURIComponent(options['hidedate']) +
 	'&hideweather=' + encodeURIComponent(options['hideweather']) +
-    '&hourlyvibe=' + encodeURIComponent(options['hourlyvibe']);
+    '&md=' + encodeURIComponent(options['md']) +
+    '&hidezero=' + encodeURIComponent(options['hidezero']) +
+    '&blink=' + encodeURIComponent(options['blink']) +
+    '&month=' + encodeURIComponent(options['month']);
   //console.log('showing configuration at uri: ' + uri);
 
   Pebble.openURL(uri);

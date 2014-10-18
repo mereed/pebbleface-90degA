@@ -35,10 +35,13 @@ static int invert;
 static int bluetoothvibe;
 static int hourlyvibe;
 static int hidesec;
-static int hidedate;
 static int hide_batt;
 static int hide_date;
 static int hide_weather;
+static int md;
+static int hidezero;
+static int blink;
+static int month;
 
 static bool appStarted = false;
 
@@ -50,7 +53,11 @@ enum WeatherKey {
   HIDESEC_KEY = 0x4,
   HIDE_BATT_KEY = 0x5,
   HIDE_DATE_KEY = 0x6,
-  HIDE_WEATHER_KEY = 0x7
+  HIDE_WEATHER_KEY = 0x7,
+  MONTH_DAY_KEY = 0x8,
+  HIDE_ZERO_KEY = 0x9,
+  BLINK_KEY = 0xA,
+  MONTH_KEY = 0xB
 //  WEATHER_TEMPERATURE_KEY = 0x4
 };
 
@@ -96,6 +103,42 @@ const int DAY_NAME_IMAGE_RESOURCE_IDS[] = {
   RESOURCE_ID_IMAGE_DAY_NAME_SAT
 };
 
+static GBitmap *monthday_image;
+static BitmapLayer *monthday_layer;
+
+const int MONTH_IMAGE_RESOURCE_IDS[] = {
+  RESOURCE_ID_IMAGE_MONTH_JAN,
+  RESOURCE_ID_IMAGE_MONTH_FEB,
+  RESOURCE_ID_IMAGE_MONTH_MAR,
+  RESOURCE_ID_IMAGE_MONTH_APR,
+  RESOURCE_ID_IMAGE_MONTH_MAY,
+  RESOURCE_ID_IMAGE_MONTH_JUN,
+  RESOURCE_ID_IMAGE_MONTH_JUL,
+  RESOURCE_ID_IMAGE_MONTH_AUG,
+  RESOURCE_ID_IMAGE_MONTH_SEP,
+  RESOURCE_ID_IMAGE_MONTH_OCT,
+  RESOURCE_ID_IMAGE_MONTH_NOV,
+  RESOURCE_ID_IMAGE_MONTH_DEC
+};
+
+static GBitmap *monthletters_image;
+static BitmapLayer *monthletters_layer;
+
+const int MONTH_IMAGE2_RESOURCE_IDS[] = {
+  RESOURCE_ID_IMAGE_MONTH_JAN2,
+  RESOURCE_ID_IMAGE_MONTH_FEB2,
+  RESOURCE_ID_IMAGE_MONTH_MAR2,
+  RESOURCE_ID_IMAGE_MONTH_APR2,
+  RESOURCE_ID_IMAGE_MONTH_MAY2,
+  RESOURCE_ID_IMAGE_MONTH_JUN2,
+  RESOURCE_ID_IMAGE_MONTH_JUL2,
+  RESOURCE_ID_IMAGE_MONTH_AUG2,
+  RESOURCE_ID_IMAGE_MONTH_SEP2,
+  RESOURCE_ID_IMAGE_MONTH_OCT2,
+  RESOURCE_ID_IMAGE_MONTH_NOV2,
+  RESOURCE_ID_IMAGE_MONTH_DEC2
+};
+
 #define TOTAL_DATE_DIGITS 2	
 static GBitmap *date_digits_images[TOTAL_DATE_DIGITS];
 static BitmapLayer *date_digits_layers[TOTAL_DATE_DIGITS];
@@ -137,7 +180,7 @@ static BitmapLayer *seconds_digits_layers[TOTAL_SECONDS_DIGITS];
 InverterLayer *inverter_layer = NULL;
 
 static AppSync sync;
-static uint8_t sync_buffer[100];
+static uint8_t sync_buffer[256];
 
 
 void set_invert_color(bool invert) {
@@ -158,6 +201,18 @@ void set_invert_color(bool invert) {
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
+static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin) {
+  GBitmap *old_image = *bmp_image;
+  *bmp_image = gbitmap_create_with_resource(resource_id);
+  GRect frame = (GRect) {
+    .origin = origin,
+    .size = (*bmp_image)->bounds.size
+  };
+  bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
+  layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
+  gbitmap_destroy(old_image);
+}
+
 void hide_batt_now(bool hide_batt) {
 	
 	if (hide_batt) {
@@ -167,7 +222,6 @@ void hide_batt_now(bool hide_batt) {
 	} else {
 		layer_set_hidden(bitmap_layer_get_layer(layer_batt_img), false);
 		layer_set_hidden(bitmap_layer_get_layer(layer_conn_img), false);
-
 	}
 }
 
@@ -204,21 +258,22 @@ void hide_seconds_now(bool hidesec) {
 	for (int i = 0; i < TOTAL_SECONDS_DIGITS; ++i) {
         layer_set_hidden(bitmap_layer_get_layer(seconds_digits_layers[i]), true);
 			}
-        tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+       // tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
       }
       else {
 	for (int i = 0; i < TOTAL_SECONDS_DIGITS; ++i) {
         layer_set_hidden(bitmap_layer_get_layer(seconds_digits_layers[i]), false);
 			}
-        tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
+      //  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
       }   
 }
+
+
 
 static void sync_tuple_changed_callback(const uint32_t key,
                                         const Tuple* new_tuple,
                                         const Tuple* old_tuple,
                                         void* context) {
-
 
   // App Sync keeps new_tuple in sync_buffer, so we may use it directly
   switch (key) {
@@ -226,7 +281,6 @@ static void sync_tuple_changed_callback(const uint32_t key,
       if (icon_bitmap) {
         gbitmap_destroy(icon_bitmap);
       }
-
       icon_bitmap = gbitmap_create_with_resource(
           WEATHER_ICONS[new_tuple->value->uint8]);
       bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
@@ -269,25 +323,49 @@ static void sync_tuple_changed_callback(const uint32_t key,
 	  persist_write_bool(HIDE_DATE_KEY, hide_date);	  
 	  hide_date_now(hide_date);
 	  break;
+	 
+	case MONTH_DAY_KEY:
+	  md = new_tuple->value->uint8 !=0;
+	  persist_write_bool(MONTH_DAY_KEY, md);	
+	  if (md) {
+				//layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
+		   		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), false);
+
+	  } else{
+		 		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), true);
+		 		//layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
+	  }
+	  break;
 	  
     case HIDE_WEATHER_KEY:
       hide_weather = new_tuple->value->uint8 !=0;
 	  persist_write_bool(HIDE_WEATHER_KEY, hide_weather);	  
 	  hide_weather_now(hide_weather);
 	  break;
+	  
+	case HIDE_ZERO_KEY:
+      hidezero = new_tuple->value->uint8 !=0;
+	  persist_write_bool(HIDE_ZERO_KEY, hidezero);
+	  break;
+	  
+	case MONTH_KEY:
+      month = new_tuple->value->uint8 != 0;
+	  persist_write_bool(MONTH_KEY, month);	  
+		if (month) {
+		layer_set_hidden(bitmap_layer_get_layer(monthletters_layer), false);
+		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), true);
+		layer_set_hidden(bitmap_layer_get_layer(monthday_layer), true);	
+    	} else {
+		layer_set_hidden(bitmap_layer_get_layer(monthletters_layer), true);
+		layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
+	//	layer_set_hidden(bitmap_layer_get_layer(monthday_layer), false);
+			}
+	  break;
+	  
+	case BLINK_KEY:
+      blink = new_tuple->value->uint8 !=0;
+	  persist_write_bool(BLINK_KEY, blink);
   }
-}
-
-static void set_container_image(GBitmap **bmp_image, BitmapLayer *bmp_layer, const int resource_id, GPoint origin) {
-  GBitmap *old_image = *bmp_image;
-  *bmp_image = gbitmap_create_with_resource(resource_id);
-  GRect frame = (GRect) {
-    .origin = origin,
-    .size = (*bmp_image)->bounds.size
-  };
-  bitmap_layer_set_bitmap(bmp_layer, *bmp_image);
-  layer_set_frame(bitmap_layer_get_layer(bmp_layer), frame);
-  gbitmap_destroy(old_image);
 }
 
 void handle_battery(BatteryChargeState charge_state) {
@@ -359,9 +437,13 @@ unsigned short get_display_hour(unsigned short hour) {
 }
 	
 static void update_days(struct tm *tick_time) {
-  set_container_image(&day_name_image, day_name_layer, DAY_NAME_IMAGE_RESOURCE_IDS[tick_time->tm_wday], GPoint( 108, 60));
-  set_container_image(&date_digits_images[0], date_digits_layers[0], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_mday/10], GPoint(108, 115));
-  set_container_image(&date_digits_images[1], date_digits_layers[1], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_mday%10], GPoint(108, 140));
+
+			set_container_image(&day_name_image, day_name_layer, DAY_NAME_IMAGE_RESOURCE_IDS[tick_time->tm_wday], GPoint( 108, 60));			
+			set_container_image(&monthday_image, monthday_layer, MONTH_IMAGE_RESOURCE_IDS[tick_time->tm_mon], GPoint(108, 51));
+
+ 		    set_container_image(&date_digits_images[0], date_digits_layers[0], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_mday/10], GPoint(108, 115));
+  		    set_container_image(&date_digits_images[1], date_digits_layers[1], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_mday%10], GPoint(108, 140));
+
 }
 
 static void update_hours(struct tm *tick_time) {
@@ -370,11 +452,10 @@ static void update_hours(struct tm *tick_time) {
     //vibe!
     vibes_short_pulse();
   }
-   unsigned short display_hour = get_display_hour(tick_time->tm_hour);
+  unsigned short display_hour = get_display_hour(tick_time->tm_hour);
 
   set_container_image(&time_digits_images[0], time_digits_layers[0], BIG_DIGIT_IMAGE_RESOURCE_IDS[display_hour/10], GPoint(40, 3));
   set_container_image(&time_digits_images[1], time_digits_layers[1], BIG_DIGIT_IMAGE_RESOURCE_IDS[display_hour%10], GPoint(40, 41));
-
 }
 
 static void update_minutes(struct tm *tick_time) {
@@ -382,9 +463,39 @@ static void update_minutes(struct tm *tick_time) {
   set_container_image(&time_digits_images[3], time_digits_layers[3], BIG_DIGIT_IMAGE_RESOURCE_IDS[tick_time->tm_min%10], GPoint(40, 128));
 }
 
+static void update_mletters(struct tm *tick_time) {
+
+			set_container_image(&monthletters_image, monthletters_layer, MONTH_IMAGE2_RESOURCE_IDS[tick_time->tm_mon], GPoint(108, 51));
+
+}
+
 static void update_seconds(struct tm *tick_time) {
   set_container_image(&seconds_digits_images[0], seconds_digits_layers[0], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_sec/10], GPoint(7, 115));
   set_container_image(&seconds_digits_images[1], seconds_digits_layers[1], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_sec%10], GPoint(7, 140));
+	
+	if(blink) {
+    layer_set_hidden(bitmap_layer_get_layer(separator_layer), tick_time->tm_sec%2);
+    }
+    else {
+    if(layer_get_hidden(bitmap_layer_get_layer(separator_layer))) {
+      layer_set_hidden(bitmap_layer_get_layer(separator_layer), false);
+    }
+	}
+}
+
+static void update_zero(struct tm *tick_time) {
+ 
+	unsigned short display_hour = get_display_hour(tick_time->tm_hour);
+	
+	if (!clock_is_24h_style()) {
+    
+    if (display_hour/10 == 0 && appStarted && hidezero) {
+      layer_set_hidden(bitmap_layer_get_layer(time_digits_layers[0]), true);
+    }
+    else {
+      layer_set_hidden(bitmap_layer_get_layer(time_digits_layers[0]), false);
+    }
+  }
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -400,8 +511,15 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   }	
   if (units_changed & SECOND_UNIT) {
     update_seconds(tick_time);
-  }		  
+  }
+  if (units_changed & SECOND_UNIT) {
+    update_mletters(tick_time);
+  }  
+  if (units_changed & SECOND_UNIT) {
+    update_zero(tick_time);
+  }	  
 }
+
 
 static void init(void) {
 
@@ -413,8 +531,8 @@ static void init(void) {
   memset(&date_digits_images, 0, sizeof(date_digits_images));
 
  // Setup messaging
-  const int inbound_size = 100;
-  const int outbound_size = 100;
+  const int inbound_size = 256;
+  const int outbound_size = 256;
   app_message_open(inbound_size, outbound_size);	
 	
 	
@@ -423,13 +541,9 @@ static void init(void) {
       //APP_LOG(APP_LOG_LEVEL_DEBUG, "OOM: couldn't allocate window");
       return;
   }
-	
-void set_style(void) {
+
     background_color  = GColorBlack;
     window_set_background_color(window, background_color);
-}
-	
-  set_style();
 	
   window_stack_push(window, true /* Animated */);
   window_layer = window_get_root_layer(window);
@@ -462,13 +576,14 @@ void set_style(void) {
 
   separator_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SEPARATOR);
   GRect frame = (GRect) {
-    .origin = { .x = 50, .y = 78 },
+    .origin = { .x = 52, .y = 78 },
     .size = separator_image->bounds.size
   };
   separator_layer = bitmap_layer_create(frame);
   bitmap_layer_set_bitmap(separator_layer, separator_image);
   layer_add_child(window_layer, bitmap_layer_get_layer(separator_layer));   
-
+  
+	
  Layer *weather_holder = layer_create(GRect(0, 0, 144, 168 ));
   layer_add_child(window_layer, weather_holder);
 
@@ -482,10 +597,17 @@ void set_style(void) {
   text_layer_set_text_alignment(temp_layer, GTextAlignmentCenter);
   layer_add_child(weather_holder, text_layer_get_layer(temp_layer));
 	*/
+	
   // Create time and date layers
   GRect dummy_frame = { {0, 0}, {0, 0} };
-   day_name_layer = bitmap_layer_create(dummy_frame);
-   layer_add_child(window_layer, bitmap_layer_get_layer(day_name_layer));	
+   monthletters_layer = bitmap_layer_create(dummy_frame);
+   layer_add_child(window_layer, bitmap_layer_get_layer(monthletters_layer));		 	
+  
+	day_name_layer = bitmap_layer_create(dummy_frame);
+   layer_add_child(window_layer, bitmap_layer_get_layer(day_name_layer));
+
+	monthday_layer = bitmap_layer_create(dummy_frame);
+   layer_add_child(window_layer, bitmap_layer_get_layer(monthday_layer));		
 	
 	for (int i = 0; i < TOTAL_SECONDS_DIGITS; ++i) {
     seconds_digits_layers[i] = bitmap_layer_create(dummy_frame);
@@ -512,6 +634,10 @@ Tuplet initial_values[] = {
     TupletInteger(HIDE_BATT_KEY, persist_read_bool(HIDE_BATT_KEY)),
 	TupletInteger(HIDE_DATE_KEY, persist_read_bool(HIDE_DATE_KEY)),
 	TupletInteger(HIDE_WEATHER_KEY, persist_read_bool(HIDE_WEATHER_KEY)),
+	TupletInteger(MONTH_DAY_KEY, persist_read_bool(MONTH_DAY_KEY)),
+	TupletInteger(HIDE_ZERO_KEY, persist_read_bool(HIDE_ZERO_KEY)),
+	TupletInteger(BLINK_KEY, persist_read_bool(BLINK_KEY)),
+	TupletInteger(MONTH_KEY, persist_read_bool(MONTH_KEY)),
   };
 
   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values,
@@ -565,6 +691,14 @@ static void deinit(void) {
   layer_remove_from_parent(bitmap_layer_get_layer(day_name_layer));
   bitmap_layer_destroy(day_name_layer);
   gbitmap_destroy(day_name_image);
+	
+  layer_remove_from_parent(bitmap_layer_get_layer(monthletters_layer));
+  bitmap_layer_destroy(monthletters_layer);
+  gbitmap_destroy(monthletters_image);
+	
+  layer_remove_from_parent(bitmap_layer_get_layer(monthday_layer));
+  bitmap_layer_destroy(monthday_layer);
+  gbitmap_destroy(monthday_image);
 	
   layer_remove_from_parent(bitmap_layer_get_layer(icon_layer));
   bitmap_layer_destroy(icon_layer);
