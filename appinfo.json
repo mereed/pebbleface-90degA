@@ -12,7 +12,8 @@
         "icon": 0,
         "invert_color": 1,
         "md": 8,
-        "month": 11
+        "month": 11,
+        "weekday": 13
     },
     "capabilities": [
         "configurable"
@@ -22,6 +23,41 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/90-saturday.png",
+                "name": "IMAGE_DAY_NAME_SAT2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-friday.png",
+                "name": "IMAGE_DAY_NAME_FRI2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-thursday.png",
+                "name": "IMAGE_DAY_NAME_THU2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-wednesday.png",
+                "name": "IMAGE_DAY_NAME_WED2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-tuesday.png",
+                "name": "IMAGE_DAY_NAME_TUE2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-monday.png",
+                "name": "IMAGE_DAY_NAME_MON2",
+                "type": "png"
+            },
+            {
+                "file": "images/90-SUNday.png",
+                "name": "IMAGE_DAY_NAME_SUN2",
+                "type": "png"
+            },
             {
                 "file": "images/90-DEC-W.png",
                 "name": "IMAGE_MONTH_DEC2",
@@ -433,7 +469,7 @@
     "shortName": "ninetydegA",
     "uuid": "2867f492-b1b8-4b60-a446-a21f0e37f188",
     "versionCode": 1,
-    "versionLabel": "1.5",
+    "versionLabel": "1.6",
     "watchapp": {
         "watchface": true
     }

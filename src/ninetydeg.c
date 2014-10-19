@@ -43,6 +43,7 @@ static int md;
 static int hidezero;
 static int blink;
 static int month;
+static int weekday;
 
 static bool appStarted = false;
 
@@ -59,7 +60,8 @@ enum WeatherKey {
   HIDE_ZERO_KEY = 0x9,
   BLINK_KEY = 0xA,
   MONTH_KEY = 0xB,
-  HIDE_BT_KEY = 0xC
+  HIDE_BT_KEY = 0xC,
+  WEEKDAY_KEY = 0xD
 //  WEATHER_TEMPERATURE_KEY = 0x4
 };
 
@@ -105,6 +107,18 @@ const int DAY_NAME_IMAGE_RESOURCE_IDS[] = {
   RESOURCE_ID_IMAGE_DAY_NAME_SAT
 };
 
+static GBitmap *weekday_name_image;
+static BitmapLayer *weekday_name_layer;
+
+const int DAY_NAME_IMAGE2_RESOURCE_IDS[] = {
+  RESOURCE_ID_IMAGE_DAY_NAME_SUN2,
+  RESOURCE_ID_IMAGE_DAY_NAME_MON2,
+  RESOURCE_ID_IMAGE_DAY_NAME_TUE2,
+  RESOURCE_ID_IMAGE_DAY_NAME_WED2,
+  RESOURCE_ID_IMAGE_DAY_NAME_THU2,
+  RESOURCE_ID_IMAGE_DAY_NAME_FRI2,
+  RESOURCE_ID_IMAGE_DAY_NAME_SAT2
+};
 static GBitmap *monthday_image;
 static BitmapLayer *monthday_layer;
 
@@ -371,6 +385,17 @@ static void sync_tuple_changed_callback(const uint32_t key,
 			}
 	}
 	  break;
+	case WEEKDAY_KEY:
+      weekday = new_tuple->value->uint8 != 0;
+	  persist_write_bool(WEEKDAY_KEY, weekday);	  
+		if (weekday) {
+		layer_set_hidden(bitmap_layer_get_layer(weekday_name_layer), false);
+	
+    	} else {
+		layer_set_hidden(bitmap_layer_get_layer(weekday_name_layer), true);
+
+			}
+	  break;
   }
 }
 
@@ -445,6 +470,7 @@ unsigned short get_display_hour(unsigned short hour) {
 static void update_days(struct tm *tick_time) {
 
 			set_container_image(&day_name_image, day_name_layer, DAY_NAME_IMAGE_RESOURCE_IDS[tick_time->tm_wday], GPoint( 108, 60));			
+			set_container_image(&weekday_name_image, weekday_name_layer, DAY_NAME_IMAGE2_RESOURCE_IDS[tick_time->tm_wday], GPoint( 108, 0));			
 			set_container_image(&monthday_image, monthday_layer, MONTH_IMAGE_RESOURCE_IDS[tick_time->tm_mon], GPoint(108, 51));
 
  		    set_container_image(&date_digits_images[0], date_digits_layers[0], TINY_IMAGE_RESOURCE_IDS[tick_time->tm_mday/10], GPoint(108, 115));
@@ -610,6 +636,9 @@ static void init(void) {
 	day_name_layer = bitmap_layer_create(dummy_frame);
    layer_add_child(window_layer, bitmap_layer_get_layer(day_name_layer));
 	
+	weekday_name_layer = bitmap_layer_create(dummy_frame);
+   layer_add_child(window_layer, bitmap_layer_get_layer(weekday_name_layer));
+	
 	monthletters_layer = bitmap_layer_create(dummy_frame);
    layer_add_child(window_layer, bitmap_layer_get_layer(monthletters_layer));		 	
   
@@ -646,6 +675,7 @@ Tuplet initial_values[] = {
 	TupletInteger(BLINK_KEY, persist_read_bool(BLINK_KEY)),
 	TupletInteger(MONTH_KEY, persist_read_bool(MONTH_KEY)),
 	TupletInteger(HIDE_BT_KEY, persist_read_bool(HIDE_BT_KEY)),
+	TupletInteger(WEEKDAY_KEY, persist_read_bool(WEEKDAY_KEY)),
   };
 
   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values,
@@ -699,6 +729,10 @@ static void deinit(void) {
   layer_remove_from_parent(bitmap_layer_get_layer(day_name_layer));
   bitmap_layer_destroy(day_name_layer);
   gbitmap_destroy(day_name_image);
+	
+  layer_remove_from_parent(bitmap_layer_get_layer(weekday_name_layer));
+  bitmap_layer_destroy(weekday_name_layer);
+  gbitmap_destroy(weekday_name_image);
 	
   layer_remove_from_parent(bitmap_layer_get_layer(monthletters_layer));
   bitmap_layer_destroy(monthletters_layer);

@@ -82,7 +82,8 @@ if (options === null) options = { "use_gps" : "true",
 							      "hidezero" : "false",
 							      "blink" : "false",
 							      "month" : "false",
-							      "hidebt" : "false"};
+							      "hidebt" : "false",
+							      "weekday" : "false"};
 
 function getWeatherFromLatLong(latitude, longitude) {
   var response;
@@ -167,6 +168,7 @@ function getWeatherFromWoeid(woeid) {
 			"blink" : (options["blink"] == "true" ? 1 : 0),
 			"month" : (options["month"] == "true" ? 1 : 0),
 			"hidebt" : (options["hidebt"] == "true" ? 1 : 0),
+			"weekday" : (options["weekday"] == "true" ? 1 : 0),
           });
         }
       } else {
@@ -203,7 +205,7 @@ function locationError(err) {
 }
 
 Pebble.addEventListener('showConfiguration', function(e) {
-  var uri = 'http://www.themapman.com/pebblewatch/90degA-14c.html?' +
+  var uri = 'http://www.themapman.com/pebblewatch/90degA-16.html?' +
     'use_gps=' + encodeURIComponent(options['use_gps']) +
     '&location=' + encodeURIComponent(options['location']) +
     '&units=' + encodeURIComponent(options['units']) +
@@ -218,7 +220,8 @@ Pebble.addEventListener('showConfiguration', function(e) {
     '&hidezero=' + encodeURIComponent(options['hidezero']) +
     '&blink=' + encodeURIComponent(options['blink']) +
     '&month=' + encodeURIComponent(options['month']) +
-    '&hidebt=' + encodeURIComponent(options['hidebt']);
+    '&hidebt=' + encodeURIComponent(options['hidebt']) +
+    '&weekday=' + encodeURIComponent(options['weekday']);
   //console.log('showing configuration at uri: ' + uri);
 
   Pebble.openURL(uri);
